@@ -9,6 +9,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
+use Drupal\workflows\Entity\Workflow;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -40,7 +41,8 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
   public static function create(ContainerInterface $container, $base_plugin_id) {
     return new static(
       $container->get('content_moderation.moderation_information'),
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('plugin.manager.workflows.type')
     );
   }
 
@@ -58,8 +60,7 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
    * @return \Drupal\content_moderation\ModerationStateInterface[]
    */
   protected function getAvailableStates() {
-    return $this->entityTypeManager->getStorage('moderation_state')
-      ->loadMultiple();
+    return Workflow::loadMultipleByType('content_moderation');
   }
 
   /**
