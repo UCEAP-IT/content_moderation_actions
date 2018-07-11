@@ -75,10 +75,10 @@ class StateChange extends ActionBase implements ContainerFactoryPluginInterface 
     /** @var \Drupal\Core\Entity\ContentEntityInterface $object */
     $entity = $this->loadLatestRevision($entity);
 
-    $entity->get('moderation_state')->target_id = $this->pluginDefinition['state'];
+    $entity->get('content_moderation_state')->target_id = $this->pluginDefinition['state'];
     $violations = $entity->validate();
 
-    if (($moderation_violations = $violations->getByField('moderation_state')) && count($moderation_violations)) {
+    if (($moderation_violations = $violations->getByField('content_moderation_state')) && count($moderation_violations)) {
       /** @var \Symfony\Component\Validator\ConstraintViolation $violation */
       foreach ($moderation_violations as $violation) {
         drupal_set_message($violation->getMessage(), 'error');
@@ -107,8 +107,8 @@ class StateChange extends ActionBase implements ContainerFactoryPluginInterface 
     /** @var \Drupal\Core\Entity\ContentEntityInterface $object */
     $object = $this->loadLatestRevision($object);
     $access = $object->access('update', $account, TRUE);
-    $from = $this->entityTypeManager->getStorage('moderation_state')->load($object->get('moderation_state')->target_id);
-    $to = $this->entityTypeManager->getStorage('moderation_state')->load($this->pluginDefinition['state']);
+    $from = $this->entityTypeManager->getStorage('content_moderation_state')->load($object->get('content_moderation_state')->target_id);
+    $to = $this->entityTypeManager->getStorage('content_moderation_state')->load($this->pluginDefinition['state']);
 
     $result = AccessResult::allowedIf($this->validation->userMayTransition($from, $to, $account))
       ->andIf($access);

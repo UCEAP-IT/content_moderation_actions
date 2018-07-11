@@ -41,7 +41,7 @@ function content_moderation_actions_entity_operation(EntityInterface $entity) {
     $url = Url::fromRoute('content_moderation_actions.state_change', [
       'entity_type_id' => $entity->getEntityTypeId(),
       'entity_id' => $entity->id(),
-      'from' => $entity->get('moderation_state')->target_id,
+      'from' => $entity->get('content_moderation_state')->target_id,
       'to' => $state->id(),
     ]);
 

@@ -58,7 +58,7 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
    * @return \Drupal\content_moderation\ModerationStateInterface[]
    */
   protected function getAvailableStates() {
-    return $this->entityTypeManager->getStorage('moderation_state')
+    return $this->entityTypeManager->getStorage('content_moderation_state')
       ->loadMultiple();
   }
 

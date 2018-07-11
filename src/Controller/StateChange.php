@@ -49,7 +49,7 @@ class StateChange extends ControllerBase {
    */
   public function change($entity_type_id, $entity_id, $from, $to) {
     $latest_revision = $this->moderationInfo->getLatestRevision($entity_type_id, $entity_id);
-    $latest_revision->get('moderation_state')->target_id = $to;
+    $latest_revision->get('content_moderation_state')->target_id = $to;
     $latest_revision->save();
 
     drupal_set_message(t('%entity_label got changed from %from to %to', [
