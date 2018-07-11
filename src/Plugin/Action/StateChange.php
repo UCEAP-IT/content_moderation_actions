@@ -42,7 +42,7 @@ class StateChange extends ActionBase implements ContainerFactoryPluginInterface 
 
   /**
    *  Construct an object of StateChange class.
-   * 
+   *
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, ModerationInformationInterface $mod_info, StateTransitionValidationInterface $validation, EntityTypeManagerInterface $entityTypeManager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -106,10 +106,12 @@ class StateChange extends ActionBase implements ContainerFactoryPluginInterface 
   public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
     /** @var \Drupal\Core\Entity\ContentEntityInterface $object */
     $object = $this->loadLatestRevision($object);
+    $access = $object->access('update', $account, TRUE);
     $from = $this->entityTypeManager->getStorage('moderation_state')->load($object->get('moderation_state')->target_id);
     $to = $this->entityTypeManager->getStorage('moderation_state')->load($this->pluginDefinition['state']);
 
-    $result = AccessResult::allowedIf($this->validation->userMayTransition($from, $to, $account));
+    $result = AccessResult::allowedIf($this->validation->userMayTransition($from, $to, $account))
+      ->andIf($access);
 
     return $return_as_object ? $result : $result->isAllowed();
   }
