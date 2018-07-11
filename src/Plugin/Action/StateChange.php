@@ -68,7 +68,7 @@ class StateChange extends ActionBase implements ContainerFactoryPluginInterface 
    */
   public function execute(ContentEntityInterface $entity = NULL) {
     if ($entity && !$this->moderationInfo->isModeratedEntity($entity)) {
-      drupal_set_message($this->t('One or more entities were skipped as they are under moderation and may not be directly published or unpublished.'));
+      drupal_set_message($this->t('One or more entities were skipped as they are under moderation and may not be directly changed.'));
       return;
     }
 
