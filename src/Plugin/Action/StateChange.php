@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Changes moderation_state of an entity.
  *
  * @Action(
- *   id = "moderation_state_change",
+ *   id = "state_change",
  *   deriver = "\Drupal\content_moderation_actions\Plugin\Derivative\ModerationStateChangeDeriver"
  * )
  */
