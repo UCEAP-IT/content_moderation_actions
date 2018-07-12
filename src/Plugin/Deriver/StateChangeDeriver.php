@@ -4,10 +4,7 @@ namespace Drupal\content_moderation_actions\Plugin\Deriver;
 
 use Drupal\Component\Plugin\Derivative\DeriverBase;
 use Drupal\content_moderation\ModerationInformationInterface;
-use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
@@ -26,7 +23,7 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
    *
    * @var \Drupal\content_moderation\ModerationInformationInterface
    */
-  protected $moderationInformation;
+  protected $moderationInfo;
 
   /**
    * The entity type manager.
@@ -47,7 +44,7 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
    */
   public function __construct(TranslationInterface $string_translation, ModerationInformationInterface $moderation_information, EntityTypeManagerInterface $entity_type_manager) {
     $this->stringTranslation = $string_translation;
-    $this->moderationInformation = $moderation_information;
+    $this->moderationInfo = $moderation_information;
     $this->entityTypeManager = $entity_type_manager;
   }
 
@@ -63,42 +60,26 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
   }
 
   /**
-   * Get all content_moderation workflows from class method.
-   *
-   * @return \Drupal\workflows\Entity\Workflow[]
-   *   Workflow objects of type content_moderation.
-   */
-  protected function getAvailableWorkflow() {
-    return Workflow::loadMultipleByType('content_moderation');
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function getDerivativeDefinitions($base_plugin_definition) {
     // Reset the discovered definitions.
     $this->derivatives = [];
-    $workflows = $this->getAvailableWorkflow();
+    $entity_types = [];
+    $workflows = Workflow::loadMultipleByType('content_moderation');
     // Collect all the entity types ID which has workflow attached to them.
     foreach ($workflows as $workflow) {
-      $entity_types = $workflow->getTypePlugin()->getEntityTypes();
-      // Create the derivatives for each entity.
-      foreach ($entity_types as $entity_type_id) {
-        $plugin['type'] = $entity_type_id;
-        $entity_states = $workflow->getTypePlugin()->getStates();
-        $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
-        foreach ($entity_states as $state_id => $state) {
-          $plugin['state'] = $state_id;
-          $plugin['label'] = t('Set @entity_type_label as @state_label', [
-            '@entity_type_label' => $entity_type->getLabel(),
-            '@state_label' => $state->label(),
-          ]);
-          $plugin['config_dependencies']['module'] = [
-            $entity_type->getProvider(),
-          ];
-          $this->derivatives[$entity_type_id . '__' . $state_id] = $plugin + $base_plugin_definition;
-        }
-      }
+      $entity_types += $workflow->getTypePlugin()->getEntityTypes();
+    }
+    // Create the derivatives for each entity.
+    foreach ($entity_types as $entity_type_id) {
+      $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
+      $plugin['type'] = $entity_type_id;
+      $plugin['label'] = $this->t('Change moderation state of @entity_type', ['@entity_type' => $entity_type->getLabel()]);
+      $plugin['config_dependencies']['module'] = [
+        $entity_type->getProvider(),
+      ];
+      $this->derivatives[$entity_type_id] = $plugin + $base_plugin_definition;
     }
     return parent::getDerivativeDefinitions($base_plugin_definition);
   }

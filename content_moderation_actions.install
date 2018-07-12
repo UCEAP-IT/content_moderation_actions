@@ -11,13 +11,6 @@ use Drupal\system\Entity\Action;
  * Implements hook_install().
  */
 function content_moderation_actions_install() {
-  // Remove the publish/unpublished actions.
-  if ($action = Action::load('node_publish_action')) {
-    $action->delete();
-  }
-  if ($action = Action::load('node_unpublish_action')) {
-    $action->delete();
-  }
 
   $deriver = StateChangeDeriver::create(\Drupal::getContainer(), 'state_change');
   foreach ($deriver->getDerivativeDefinitions([]) as $key => $definition) {

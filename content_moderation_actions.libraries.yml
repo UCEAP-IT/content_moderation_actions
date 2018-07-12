@@ -1,5 +1,0 @@
-ajax_commands:
-  js:
-    js/content_moderation_actions.js: {}
-  dependencies:
-    - core/drupal.ajax
