@@ -74,7 +74,8 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
 
       foreach ($entity_type_labels as $entity_type_id => $entity_label) {
         $plugin['type'] = $entity_type_id;
-        foreach ($states as $state_id => $state) {
+        $entity_states = $states[$plugin['type']]->type_settings["states"];
+        foreach ($entity_states as $state_id => $state) {
           $plugin['state'] = $state_id;
           $plugin['label'] = t('Set @entity_type_label as @state_label', [
             '@entity_type_label' => $entity_label,
