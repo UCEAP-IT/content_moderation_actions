@@ -86,13 +86,20 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
     }
     // Create the derivatives for each entity.
     foreach ($entity_types as $entity_type_id) {
-      $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
       $plugin['type'] = $entity_type_id;
-      $plugin['label'] = $this->t('Change moderation state of @entity_type', ['@entity_type' => $entity_type->getLabel()]);
-      $plugin['config_dependencies']['module'] = [
-        $entity_type->getProvider(),
-      ];
-      $this->derivatives[$entity_type_id] = $plugin + $base_plugin_definition;
+      $entity_states = $workflows[$entity_type_id]->getTypePlugin()->getStates();
+      $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
+      foreach ($entity_states as $state_id => $state) {
+        $plugin['state'] = $state_id;
+        $plugin['label'] = t('Set @entity_type_label as @state_label', [
+          '@entity_type_label' => $entity_type->getLabel(),
+          '@state_label' => $state->label(),
+        ]);
+        $plugin['config_dependencies']['module'] = [
+          $entity_type->getProvider(),
+        ];
+        $this->derivatives[$entity_type_id . '__' . $state_id] = $plugin + $base_plugin_definition;
+      }
     }
     return parent::getDerivativeDefinitions($base_plugin_definition);
   }
