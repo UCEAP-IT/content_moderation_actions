@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @Action(
  *   id = "state_change",
- *   deriver = "\Drupal\content_moderation_actions\Plugin\Derivative\ModerationStateChangeDeriver"
+ *   deriver = "\Drupal\content_moderation_actions\Plugin\Deriver\StateChangeDeriver"
  * )
  */
 class StateChange extends ConfigurableActionBase implements ContainerFactoryPluginInterface {
