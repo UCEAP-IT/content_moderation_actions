@@ -17,21 +17,30 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class StateChange extends ControllerBase {
 
   /**
+   * The moderation information service.
+   *
    * @var \Drupal\content_moderation\ModerationInformationInterface
    */
-  protected $moderationInfo;
+  protected $moderationInformation;
 
   /**
+   * The moderation validation service.
+   *
    * @var \Drupal\content_moderation\StateTransitionValidation
    */
-  protected $validation;
+  protected $moderationValidation;
 
   /**
+   * Moderation state change deriver constructor.
    *
+   * @param \Drupal\content_moderation\ModerationInformationInterface $moderation_information
+   *   The moderation information service.
+   * @param \Drupal\content_moderation\StateTransitionValidation $validation
+   *   The moderation validation service.
    */
-  public function __construct(ModerationInformationInterface $moderationInformation, StateTransitionValidation $validation) {
-    $this->moderationInfo = $moderationInformation;
-    $this->validation = $validation;
+  public function __construct(ModerationInformationInterface $moderation_information, StateTransitionValidation $validation) {
+    $this->moderationInformation = $moderation_information;
+    $this->moderationValidation = $validation;
   }
 
   /**
