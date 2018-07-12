@@ -78,27 +78,26 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
   public function getDerivativeDefinitions($base_plugin_definition) {
     // Reset the discovered definitions.
     $this->derivatives = [];
-    $entity_types = [];
     $workflows = $this->getAvailableWorkflow();
     // Collect all the entity types ID which has workflow attached to them.
     foreach ($workflows as $workflow) {
-      $entity_types += $workflow->getTypePlugin()->getEntityTypes();
-    }
-    // Create the derivatives for each entity.
-    foreach ($entity_types as $entity_type_id) {
-      $plugin['type'] = $entity_type_id;
-      $entity_states = $workflows[$entity_type_id]->getTypePlugin()->getStates();
-      $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
-      foreach ($entity_states as $state_id => $state) {
-        $plugin['state'] = $state_id;
-        $plugin['label'] = t('Set @entity_type_label as @state_label', [
-          '@entity_type_label' => $entity_type->getLabel(),
-          '@state_label' => $state->label(),
-        ]);
-        $plugin['config_dependencies']['module'] = [
-          $entity_type->getProvider(),
-        ];
-        $this->derivatives[$entity_type_id . '__' . $state_id] = $plugin + $base_plugin_definition;
+      $entity_types = $workflow->getTypePlugin()->getEntityTypes();
+      // Create the derivatives for each entity.
+      foreach ($entity_types as $entity_type_id) {
+        $plugin['type'] = $entity_type_id;
+        $entity_states = $workflow->getTypePlugin()->getStates();
+        $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
+        foreach ($entity_states as $state_id => $state) {
+          $plugin['state'] = $state_id;
+          $plugin['label'] = t('Set @entity_type_label as @state_label', [
+            '@entity_type_label' => $entity_type->getLabel(),
+            '@state_label' => $state->label(),
+          ]);
+          $plugin['config_dependencies']['module'] = [
+            $entity_type->getProvider(),
+          ];
+          $this->derivatives[$entity_type_id . '__' . $state_id] = $plugin + $base_plugin_definition;
+        }
       }
     }
     return parent::getDerivativeDefinitions($base_plugin_definition);
