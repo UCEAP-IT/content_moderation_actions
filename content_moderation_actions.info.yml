@@ -2,4 +2,5 @@ name: Content Moderation actions
 core: 8.x
 type: module
 dependencies:
+  - action
   - content_moderation
