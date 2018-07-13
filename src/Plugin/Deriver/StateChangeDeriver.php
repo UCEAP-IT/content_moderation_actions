@@ -69,13 +69,13 @@ class StateChangeDeriver extends DeriverBase implements ContainerDeriverInterfac
     $workflows = Workflow::loadMultipleByType('content_moderation');
     // Collect all the entity types ID which has workflow attached to them.
     foreach ($workflows as $workflow) {
-      $entity_types += $workflow->getTypePlugin()->getEntityTypes();
+      $entity_types = array_unique(array_merge($entity_types, $workflow->getTypePlugin()->getEntityTypes()));
     }
     // Create the derivatives for each entity.
     foreach ($entity_types as $entity_type_id) {
       $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
       $plugin['type'] = $entity_type_id;
-      $plugin['label'] = $this->t('Change moderation state of @entity_type', ['@entity_type' => $entity_type->getLabel()]);
+      $plugin['label'] = $this->t('Change Status of @entity_type', ['@entity_type' => $entity_type->getLabel()]);
       $plugin['config_dependencies']['module'] = [
         $entity_type->getProvider(),
       ];

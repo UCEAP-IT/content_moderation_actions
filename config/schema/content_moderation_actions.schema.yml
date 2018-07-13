@@ -1,0 +1,10 @@
+action.configuration.state_change:*:
+  type: action_configuration_default
+  label: 'Change Status'
+  mapping:
+    workflow:
+      type: string
+      label: 'The ID of the workflow'
+    state:
+      type: string
+      label: 'The ID of the state'
