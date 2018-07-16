@@ -1,0 +1,36 @@
+{
+    "name": "uceap-it/content_moderation_actions",
+    "description": "UI/UX for adding system actions for setting a content entity type to a specific state in a specific workflow under drupal core's",
+    "keywords": ["Drupal", "Content", "Moderation", "workflow", "actions", "content_moderation"],
+    "type": "drupal-module",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniel Wehner",
+            "homepage": "https://github.com/dawehner",
+            "role": "Developer"
+        },
+        {
+            "name": "Naveen Valecha",
+            "homepage": "https://github.com/naveenvalecha",
+            "role": "Developer"
+        },
+        {
+            "name": "Jibran Ijaz",
+            "homepage": "https://www.drupal.org/u/jibran",
+            "role": "Developer"
+        },
+        {
+            "name": "Shaun Drong",
+            "homepage": "https://github.com/shaundrong",
+            "role": "Developer"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "support": {
+      "issues": "https://github.com/UCEAP-IT/content_moderation_actions/issues",
+      "source": "https://github.com/UCEAP-IT/content_moderation_actions",
+      "docs": "https://github.com/UCEAP-IT/content_moderation_actions"
+    }
+}
