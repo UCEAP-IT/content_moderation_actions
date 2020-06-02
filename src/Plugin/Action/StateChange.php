@@ -235,6 +235,8 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
     else {
       $result = AccessResult::forbidden('No valid transition found.');
     }
+    // Allow modules to alter state_change action access result.
+    \Drupal::moduleHandler()->alter('cma_state_change_access_alter', $result, $account, $object, $workflow);
     $result->addCacheableDependency($workflow);
     return $return_as_object ? $result : $result->isAllowed();
   }
