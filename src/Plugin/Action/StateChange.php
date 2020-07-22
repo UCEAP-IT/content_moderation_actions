@@ -8,6 +8,7 @@ use Drupal\Core\Action\ConfigurableActionBase;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\DependencyTrait;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\workflows\Entity\Workflow;
@@ -33,6 +34,13 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
   protected $moderationInfo;
 
   /**
+   * The logger channel used for logging messages.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelInterface
+   */
+  protected $logger;
+
+  /**
    * Moderation state change constructor.
    *
    * @param array $configuration
@@ -43,10 +51,13 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
    *   The plugin implementation definition.
    * @param \Drupal\content_moderation\ModerationInformationInterface $moderation_info
    *   The moderation info service.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerFactory
+   *   The logger factory.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, ModerationInformationInterface $moderation_info) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, ModerationInformationInterface $moderation_info, LoggerChannelFactoryInterface $loggerFactory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->moderationInfo = $moderation_info;
+    $this->logger = $loggerFactory->get('content_moderation_actions');
   }
 
   /**
@@ -57,7 +68,8 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('content_moderation.moderation_information')
+      $container->get('content_moderation.moderation_information'),
+      $container->get('logger.factory')
     );
   }
 
@@ -205,18 +217,21 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
    */
   public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
     if (!$object || !$object instanceof ContentEntityInterface) {
-      $result = AccessResult::forbidden('Not a valid entity.');
+      $result = AccessResult::forbidden();
+      $this->logger->error('Tried to change moderation state on non content entity');
       return $return_as_object ? $result : $result->isAllowed();
     }
     if ($workflow = $this->moderationInfo->getWorkflowForEntity($object)) {
       if ($workflow->id() !== $this->configuration['workflow']) {
-        $result = AccessResult::forbidden('Not a valid workflow for this entity.');
+        $result = AccessResult::forbidden($this->getAccessErrorMessage('It is not possible to apply selected transition', $object));
+        $this->logger->error('Tried to change moderation state on an entity which doesn\'t use the selected workflow.');
         $result->addCacheableDependency($workflow);
         return $return_as_object ? $result : $result->isAllowed();
       }
     }
     else {
-      $result = AccessResult::forbidden('No workflow found for the entity.');
+      $result = AccessResult::forbidden($this->getAccessErrorMessage('It is not possible to apply selected transition', $object));
+      $this->logger->error('Tried to change moderation state on an entity which doesn\'t use workflows.');
       return $return_as_object ? $result : $result->isAllowed();
     }
     $object = $this->loadLatestRevision($object);
@@ -233,7 +248,11 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
         ->andIf($access);
     }
     else {
-      $result = AccessResult::forbidden('No valid transition found.');
+      $result = AccessResult::forbidden($this->getAccessErrorMessage('It is not possible to apply selected transition', $object));
+      $this->logger->error('Tried to change moderation state on an entity which doesn\'t use have the selected transition: From @from to @to.', [
+        '@from' => $object->moderation_state->value,
+        '@to' => $to_state_id,
+      ]);
     }
     // Allow modules to alter state_change action access result.
     $data = [
@@ -246,6 +265,23 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
     \Drupal::moduleHandler()->alter('cma_state_change_access', $result, $data);
     $result->addCacheableDependency($workflow);
     return $return_as_object ? $result : $result->isAllowed();
+  }
+
+  /**
+   * Generates an access error message based on a given reason.
+   *
+   * @param string $reason
+   *   The error reason.
+   * @param ContentEntityInterface $entity
+   *   The entity to generate the error message for.
+   *
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   */
+  protected function getAccessErrorMessage($reason, $entity) {
+    return (string) $this->t('@reason for @entity_label.', [
+      '@reason' => $reason,
+      '@entity_label' => $entity->label(),
+    ]);
   }
 
 }
