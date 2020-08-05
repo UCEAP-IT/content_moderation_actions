@@ -24,6 +24,11 @@
             "name": "Shaun Drong",
             "homepage": "https://github.com/shaundrong",
             "role": "Developer"
+        },
+        {
+            "name": "Jakob Larsen",
+            "homepage": "https://github.com/googletorp",
+            "role": "Developer"
         }
     ],
     "minimum-stability": "dev",
