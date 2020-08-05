@@ -2,15 +2,19 @@
 
 namespace Drupal\content_moderation_actions\Plugin\Action;
 
+use Drupal\Component\Datetime\Time;
 use Drupal\content_moderation\ModerationInformationInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Action\ConfigurableActionBase;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\DependencyTrait;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\RevisionLogInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\workflows\Entity\Workflow;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -27,6 +31,13 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
   use DependencyTrait;
 
   /**
+   * The current user.
+   *
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
+  protected $currentUser;
+
+  /**
    * The moderation info service.
    *
    * @var \Drupal\content_moderation\ModerationInformationInterface
@@ -39,6 +50,20 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
    * @var \Drupal\Core\Logger\LoggerChannelInterface
    */
   protected $logger;
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * The Drupal time service.
+   *
+   * @var \Drupal\Component\Datetime\Time
+   */
+  protected $time;
 
   /**
    * Moderation state change constructor.
@@ -54,10 +79,13 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerFactory
    *   The logger factory.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, ModerationInformationInterface $moderation_info, LoggerChannelFactoryInterface $loggerFactory) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, ModerationInformationInterface $moderation_info, LoggerChannelFactoryInterface $loggerFactory, EntityTypeManagerInterface $entityTypeManager, Time $time, AccountProxyInterface $currentUser) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->moderationInfo = $moderation_info;
     $this->logger = $loggerFactory->get('content_moderation_actions');
+    $this->entityTypeManager = $entityTypeManager;
+    $this->time = $time;
+    $this->currentUser = $currentUser;
   }
 
   /**
@@ -69,7 +97,10 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
       $plugin_id,
       $plugin_definition,
       $container->get('content_moderation.moderation_information'),
-      $container->get('logger.factory')
+      $container->get('logger.factory'),
+      $container->get('entity_type.manager'),
+      $container->get('datetime.time'),
+      $container->get('current_user')
     );
   }
 
@@ -194,7 +225,18 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
    * {@inheritdoc}
    */
   public function execute(ContentEntityInterface $entity = NULL) {
-    $entity = $this->loadLatestRevision($entity);
+    // Create a new revision if entity is revisionable to fix some edge cases
+    // with performing moderation states which publishes the entity.
+    if ($entity->getEntityType()->isRevisionable()) {
+      $entity = $this->loadLatestRevision($entity);
+      $entity = $this->entityTypeManager->getStorage($entity->getEntityTypeId())
+       ->createRevision($entity, $entity->isDefaultRevision());
+      if ($entity instanceof RevisionLogInterface) {
+        $entity->setRevisionCreationTime($this->time->getRequestTime());
+        $entity->setRevisionUserId($this->currentUser->id());
+      }
+    }
+
     $entity->moderation_state->value = $this->configuration['state'];
     $entity->save();
   }
