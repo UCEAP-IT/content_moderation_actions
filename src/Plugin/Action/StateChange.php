@@ -7,6 +7,7 @@ use Drupal\content_moderation\ModerationInformationInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Action\ConfigurableActionBase;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityChangedInterface;
 use Drupal\Core\Entity\DependencyTrait;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\RevisionLogInterface;
@@ -78,6 +79,12 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
    *   The moderation info service.
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerFactory
    *   The logger factory.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The entity type manager.
+   * @param \Drupal\Component\Datetime\Time $time
+   *   The Drupal time service.
+   * @param \Drupal\Core\Session\AccountProxyInterface $currentUser
+   *   The current user.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, ModerationInformationInterface $moderation_info, LoggerChannelFactoryInterface $loggerFactory, EntityTypeManagerInterface $entityTypeManager, Time $time, AccountProxyInterface $currentUser) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -230,13 +237,16 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
     if ($entity->getEntityType()->isRevisionable()) {
       $entity = $this->loadLatestRevision($entity);
       $entity = $this->entityTypeManager->getStorage($entity->getEntityTypeId())
-       ->createRevision($entity, $entity->isDefaultRevision());
+        ->createRevision($entity, $entity->isDefaultRevision());
       if ($entity instanceof RevisionLogInterface) {
         $entity->setRevisionCreationTime($this->time->getRequestTime());
         $entity->setRevisionUserId($this->currentUser->id());
       }
     }
-
+    // Set changed time of the entity when finalize it.
+    if ($entity instanceof EntityChangedInterface) {
+      $entity->setChangedTime($this->time->getRequestTime());
+    }
     $entity->moderation_state->value = $this->configuration['state'];
     $entity->save();
   }
@@ -314,10 +324,11 @@ class StateChange extends ConfigurableActionBase implements ContainerFactoryPlug
    *
    * @param string $reason
    *   The error reason.
-   * @param ContentEntityInterface $entity
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   The entity to generate the error message for.
    *
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   *   Error message Translatable Markup.
    */
   protected function getAccessErrorMessage($reason, $entity) {
     return (string) $this->t('@reason for @entity_label.', [
